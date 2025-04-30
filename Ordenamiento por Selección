@@ -1,0 +1,52 @@
+.data
+array:      .word 7, 3, 5, 1, 9     
+
+.text
+.globl main
+
+main:
+    la $a0, array                  # Dirección inicial del arreglo
+    la $a1, array + 16             # Dirección del último elemento (4 * (n - 1), n = 5 → 4 * 4 = 16)
+    jal sort                       # Llama a sort
+    li $v0, 10                     # Finaliza programa
+    syscall
+
+# Procedimiento: sort
+# Entrada: $a0 = inicio del arreglo, $a1 = final del arreglo
+sort:
+    beq $a0, $a1, done             # Si ya está ordenado (1 elemento), terminar
+    jal max                        # Llama a max (devuelve $v0 = dir max, $v1 = valor max)
+
+    lw $t0, 0($a1)                 # $t0 = valor del último elemento
+    sw $t0, 0($v0)                 # Guarda el valor del último en la posición del máximo
+    sw $v1, 0($a1)                 # Guarda el valor máximo en la última posición
+
+    addi $a1, $a1, -4              # Mueve el puntero del final hacia atrás (una posición)
+    j sort                         # Repite con el subarreglo más pequeño
+
+done:
+    jr $ra                         # Retorna al main
+
+# Procedimiento: max
+# Entrada: $a0 = inicio, $a1 = fin
+# Salida: $v0 = dirección del máximo, $v1 = valor máximo
+max:
+    move $t1, $a0                  # $t1 = puntero actual
+    lw $t2, 0($t1)                 # $t2 = valor máximo actual
+    move $t3, $t1                  # $t3 = dirección del máximo
+
+max_loop:
+    bgt $t1, $a1, max_done         # Si ya pasó el final, terminar
+    lw $t4, 0($t1)                 # Carga el valor actual
+    blt $t4, $t2, skip             # Si es menor que el actual, omitir
+    move $t2, $t4                  # Nuevo máximo
+    move $t3, $t1                  # Nueva dirección del máximo
+
+skip:
+    addi $t1, $t1, 4               # Siguiente elemento
+    j max_loop
+
+max_done:
+    move $v0, $t3                  # Dirección del máximo
+    move $v1, $t2                  # Valor del máximo
+    jr $ra
