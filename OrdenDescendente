@@ -1,0 +1,53 @@
+.data
+array:  .word 7, 3, 5, 1, 9    
+
+.text
+.globl main
+
+main:
+    la $a0, array              # Puntero al inicio
+    la $a1, array + 16         # Puntero al final (última posición: 4*(n-1))
+    jal sort_desc              # Llama al ordenamiento descendente
+    li $v0, 10                 # Salir
+    syscall
+
+# Procedimiento: sort_desc
+# Ordena de mayor a menor
+sort_desc:
+    beq $a0, $a1, done
+
+    jal max                    # $v0 = dir max, $v1 = valor max
+
+    lw $t0, 0($a0)             # Cargar el valor del primer elemento
+    sw $t0, 0($v0)             # Mover el primer valor a donde estaba el máximo
+    sw $v1, 0($a0)             # Colocar el máximo en la primera posición
+
+    addi $a0, $a0, 4           # Avanzar al siguiente elemento
+    j sort_desc               # Repetir con el subarreglo restante
+
+done:
+    jr $ra
+
+# Procedimiento: max
+# Entrada: $a0 (inicio), $a1 (fin)
+# Salida: $v0 = dir máx, $v1 = valor máx
+max:
+    move $t1, $a0              # puntero
+    lw $t2, 0($t1)             # valor máximo actual
+    move $t3, $t1              # dirección del máximo
+
+max_loop:
+    bgt $t1, $a1, max_done     # terminar si ya pasamos el final
+    lw $t4, 0($t1)
+    blt $t4, $t2, skip
+    move $t2, $t4              # nuevo máximo
+    move $t3, $t1              # nueva dirección del máximo
+
+skip:
+    addi $t1, $t1, 4           # siguiente elemento
+    j max_loop
+
+max_done:
+    move $v0, $t3              # dirección
+    move $v1, $t2              # valor
+    jr $ra
